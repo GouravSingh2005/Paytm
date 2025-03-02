@@ -1,0 +1,33 @@
+# Node modules (dependencies)
+node_modules/
+
+# Environment variables (Secrets)
+.env
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+logs/
+*.log
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Editor-specific files (VS Code, JetBrains, etc.)
+.vscode/
+.idea/
+*.swp
+
+# Build files
+dist/
+build/
+coverage/
+
+# MongoDB data dump (optional)
+dump/
+
+# Git-related
+.git/
