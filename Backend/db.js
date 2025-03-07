@@ -1,5 +1,5 @@
-import mongoose from"mongoose"
-import { type } from "os";
+const mongoose=require("mongoose");
+
 mongoose.connect("mongodb://localhost:27017/paytm");
 
 const Schema=mongoose.Schema;
