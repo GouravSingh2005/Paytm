@@ -1,5 +1,6 @@
 const express = require("express");
 const z = require("zod");
+
 const jwt = require("jsonwebtoken");
 const { JWT_SECRET } = require("../config"); 
 const { User, Account } = require("../db");
@@ -24,32 +25,48 @@ const saltRounds = 10;
 
 // Signup Route
 router.post("/signup", async (req, res) => {
-    const { success } = signupSchema.safeParse(req.body);
-    if (!success) {
-        return res.status(400).json({ message: "Invalid input credentials" });
+    // Validate request body
+    const result = signupSchema.safeParse(req.body);
+    if (!result.success) {
+        return res.status(400).json({ 
+            message: "Invalid input credentials", 
+            errors: result.error.errors  
+        });
     }
 
-    const existingUser = await User.findOne({ username: req.body.username });
-    if (existingUser) {
-        return res.status(400).json({ message: "Username already taken" });
+    try {
+        // Check if user already exists
+        const existingUser = await User.findOne({ username: req.body.username });
+        if (existingUser) {
+            return res.status(400).json({ message: "Username already taken" });
+        }
+
+        // Hash the password
+        const hashedPassword = await bcrypt.hash(req.body.password, saltRounds);
+
+        // Create user
+        const dbUser = await User.create({
+            email: req.body.email,
+            password: hashedPassword,
+            username: req.body.username,
+            firstName: req.body.firstName,
+            lastName: req.body.lastName
+        });
+
+        // Create account with random balance
+        await Account.create({
+            userId: dbUser._id,  
+            balance: (1 + Math.random() * 10000).toFixed(2) 
+        });
+
+        // Generate JWT token
+        const token = jwt.sign({ user_id: dbUser._id }, JWT_SECRET, { algorithm: "HS256" });
+
+        return res.json({ message: "User Created Successfully", token });
+    } catch (error) {
+        console.error("Signup Error:", error);
+        return res.status(500).json({ message: "Internal Server Error", error });
     }
-
-    const hashedPassword = await bcrypt.hash(req.body.password, saltRounds);
-    const dbUser = await User.create({
-        email: req.body.email,
-        password: hashedPassword,
-        username: req.body.username,
-        firstName: req.body.firstName,
-        lastName: req.body.lastName
-    });
-
-    await Account.create({
-        user_id: dbUser._id, // Fixed user_id reference
-        balance: 1 + Math.random() * 10000
-    });
-
-    const token = jwt.sign({ user_id: dbUser._id }, JWT_SECRET);
-    return res.json({ message: "User Created Successfully", token });
 });
 
 // Signin Route
@@ -66,7 +83,7 @@ router.post("/signin", async (req, res) => {
         return res.status(400).json({ message: "Incorrect password" });
     }
 
-    const token = jwt.sign({ user_id: user._id }, JWT_SECRET);
+    const token = jwt.sign({ user_id: user._id }, JWT_SECRET, { algorithm: "HS256" });
     return res.json({ message: "Login successful", token });
 });
 
@@ -112,4 +129,4 @@ router.get("/bulk", async (req, res) => {
     }
 });
 
-module.exports = router; // ✅ Export in CommonJS format
+module.exports = router; 
