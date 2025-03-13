@@ -1,44 +1,39 @@
 const express = require("express");
 const z = require("zod");
-
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
 const { JWT_SECRET } = require("../config"); 
 const { User, Account } = require("../db");
-const bcrypt = require("bcrypt");
 const { authMiddleware } = require("../middleware");
 
 const router = express.Router();
-
-const signupSchema = z.object({
-    firstName: z.string().min(2).max(30).trim(),
-    lastName: z.string().min(2).max(30).trim(),
-    username: z.string().min(3).max(20).regex(/^[a-zA-Z0-9_]+$/),
-    email: z.string().email().trim(),
-    password: z.string().min(8).max(50)
-        .regex(/[A-Z]/, "Must contain an uppercase letter")
-        .regex(/[a-z]/, "Must contain a lowercase letter")
-        .regex(/[0-9]/, "Must contain a digit")
-        .regex(/[^A-Za-z0-9]/, "Must contain a special character"),
-});
-
 const saltRounds = 10;
 
+
+const signupSchema = z.object({
+    username: z.string(),
+    email:z.string().email(),
+    firstName: z.string(),
+    lastName: z.string(),
+    password: z.string(),
+  });
 // Signup Route
 router.post("/signup", async (req, res) => {
-    // Validate request body
+   
+
     const result = signupSchema.safeParse(req.body);
     if (!result.success) {
-        return res.status(400).json({ 
-            message: "Invalid input credentials", 
-            errors: result.error.errors  
-        });
+        return res.status(400).json({ message: result.error.errors[0].message }); // Show only first error
     }
 
     try {
-        // Check if user already exists
-        const existingUser = await User.findOne({ username: req.body.username });
+        // Check if username or email already exists
+        const existingUser = await User.findOne({ 
+            $or: [{ username: req.body.username }, { email: req.body.email }] 
+        });
+
         if (existingUser) {
-            return res.status(400).json({ message: "Username already taken" });
+            return res.status(400).json({ message: "Username or email already taken" });
         }
 
         // Hash the password
@@ -65,7 +60,7 @@ router.post("/signup", async (req, res) => {
         return res.json({ message: "User Created Successfully", token });
     } catch (error) {
         console.error("Signup Error:", error);
-        return res.status(500).json({ message: "Internal Server Error", error });
+        return res.status(500).json({ message: "Internal Server Error" });
     }
 });
 
@@ -89,15 +84,15 @@ router.post("/signin", async (req, res) => {
 
 // Update User Route
 const updateBody = z.object({
-    password: z.string().optional(),
-    firstName: z.string().optional(),
-    lastName: z.string().optional()
+    password: z.string().min(8, { message: "Password must be at least 8 characters" }).optional(),
+    firstName: z.string().min(2, { message: "First name must be at least 2 characters" }).optional(),
+    lastName: z.string().min(2, { message: "Last name must be at least 2 characters" }).optional()
 });
 
 router.put("/update", authMiddleware, async (req, res) => {
-    const { success } = updateBody.safeParse(req.body);
-    if (!success) {
-        return res.status(400).json({ message: "Error while updating information" });
+    const result = updateBody.safeParse(req.body);
+    if (!result.success) {
+        return res.status(400).json({ message: result.error.errors[0].message }); // Show only first error
     }
 
     await User.updateOne({ _id: req.user_id }, req.body);
@@ -129,4 +124,4 @@ router.get("/bulk", async (req, res) => {
     }
 });
 
-module.exports = router; 
+module.exports = router;
