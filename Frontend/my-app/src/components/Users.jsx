@@ -9,7 +9,7 @@ export const Users = () => {
 
   useEffect(() => {
     axios
-      .get(`${import.meta.env.VITE_SERVER_URL}/api/v1/user/bulk?filter=${filter}`)
+      .get(`http://localhost:3000/api/v1/user/bulk?filter=${filter}`)
       .then((response) => {
         setUsers(response.data.users);
       })
@@ -32,7 +32,7 @@ export const Users = () => {
 
       <div>
         {users.map((user) => (
-          <UserComponent key={user._id} user={user} navigate={navigate} />
+          <UserComponent key={user._id || user.firstName} user={user} navigate={navigate} />
         ))}
       </div>
     </>
@@ -44,7 +44,7 @@ const UserComponent = ({ user, navigate }) => {
     <div className="flex justify-between p-4 border-b">
       <div className="flex items-center">
         <div className="rounded-full h-12 w-12 bg-slate-200 flex justify-center items-center text-xl font-bold mr-2">
-          {user.firstName[0]?.toUpperCase()}
+          {user.firstName ? user.firstName[0]?.toUpperCase() : "?"}
         </div>
         <div>
           <div>{user.firstName} {user.lastName}</div>

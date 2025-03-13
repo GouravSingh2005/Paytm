@@ -1,83 +1,114 @@
-import { useState } from "react";
-import { Buttonwarning } from "../components/Buttonwarning";
-import { ButtonComponent } from "../components/ButtonComponent";
-import { Heading } from "../components/Heading";
-import { SubHeading } from "../components/SubHeading";
-import { InputBox } from "../components/InputBox";
+import { useEffect, useState } from "react";
+import { Buttonwarning } from "../components/Buttonwarning.jsx";
+import { ButtonComponent } from "../components/ButtonComponent.jsx";
+import { Heading } from "../components/Heading.jsx";
+import { InputBox } from "../components/InputBox.jsx";
+import { SubHeading } from "../components/SubHeading.jsx";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 export const Signup = () => {
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    password: "",
-  });
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+  useEffect(() => {
+    const userToken = localStorage.getItem("token");
+    if (userToken) {
+      navigate("/dashboard");
+    }
+  }, [navigate]);
 
   const handleSignup = async () => {
+    setLoading(true);
+    setError("");
+
     try {
       const response = await axios.post(
         "http://localhost:3000/api/v1/user/signup",
-        formData
+        {
+          username,
+          firstName,
+          lastName,
+          email,
+          password,
+        }
       );
 
       localStorage.setItem("token", response.data.token);
-      alert("Signup successful!");
-    } catch (error) {
-      console.error("Signup failed:", error.response?.data || error.message);
-      alert(error.response?.data?.message || "Signup failed. Try again.");
+      navigate("/dashboard");
+    } catch (err) {
+      setError(err.response?.data?.message || "Signup failed. Try again.");
+      console.error("Signup error:", err);
     }
+
+    setLoading(false);
   };
 
   return (
     <div className="bg-slate-300 h-screen flex justify-center">
       <div className="flex flex-col justify-center">
         <div className="rounded-lg bg-white w-80 text-center p-2 h-max px-4">
-          <Heading label={"Signup"} />
+          <Heading label={"Sign up"} />
           <SubHeading label={"Enter your information to create an account"} />
-          
-          <InputBox 
-            placeholder="John" 
-            label="First Name" 
+
+          {error && <p className="text-red-500 text-sm">{error}</p>}
+
+          <InputBox
             name="firstName"
-            value={formData.firstName}
-            onChange={handleChange}
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+            placeholder="John"
+            label={"First Name"}
           />
-          
-          <InputBox 
-            placeholder="Doe" 
-            label="Last Name" 
+          <InputBox
             name="lastName"
-            value={formData.lastName}
-            onChange={handleChange}
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+            placeholder="Doe"
+            label={"Last Name"}
           />
-          
-          <InputBox 
-            placeholder="Gourav@gmail.com" 
-            label="Email" 
+          <InputBox
+            name="username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            placeholder="your_username"
+            label={"Username"}
+          />
+          <InputBox
             name="email"
-            value={formData.email}
-            onChange={handleChange}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="example@gmail.com"
+            label={"Email"}
           />
-          
-          <InputBox 
-            placeholder="123456" 
-            label="Password" 
+          <InputBox
             name="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
+            label={"Password"}
             type="password"
-            value={formData.password}
-            onChange={handleChange}
           />
-          
+
           <div className="pt-4">
-            <ButtonComponent label={"Signup"} onClick={handleSignup} />
+            <ButtonComponent
+              onClick={handleSignup}
+              label={loading ? "Signing up..." : "Sign up"}
+              disabled={loading}
+            />
           </div>
-          
-          <Buttonwarning label={"Already have an account"} buttonText={"Sign in"} to={"/Signin"} />
+
+          <Buttonwarning
+            label={"Already have an account?"}
+            buttonText={"Sign in"}
+            to={"/signin"}
+          />
         </div>
       </div>
     </div>
