@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
-
-mongoose.connect("mongodb+srv://Gourav:Gourav%40123@cluster0.x5vcj.mongodb.net/paytm")
+require('dotenv').config();
+mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log("Database connected successfully"))
     .catch(err => console.log("Database connection error:", err));
 
