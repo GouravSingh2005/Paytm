@@ -67,14 +67,14 @@ jobs:
 
       - name: SSH into EC2 and deploy
         run: |
-          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_PUBLIC_IP }} "
-            sudo apt-get update &&
-            sudo apt-get install -y docker.io docker-compose-plugin &&
-            sudo systemctl start docker &&
-            sudo systemctl enable docker &&
-            sudo usermod -aG docker ubuntu || true &&
-            cd ~/paytm &&
-            echo '${{ secrets.DOCKER_HUB_PASSWORD }}' | sudo docker login -u '${{ secrets.DOCKER_HUB_USERNAME }}' --password-stdin &&
-            sudo docker-compose pull &&
-            sudo docker-compose up -d --build
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_PUBLIC_IP }} "\
+            sudo apt-get update && \
+            sudo apt-get install -y docker.io docker-compose-plugin && \
+            sudo systemctl start docker && \
+            sudo systemctl enable docker && \
+            sudo usermod -aG docker ubuntu || true && \
+            cd ~/paytm && \
+            echo '${{ secrets.DOCKER_HUB_PASSWORD }}' | sudo docker login -u '${{ secrets.DOCKER_HUB_USERNAME }}' --password-stdin && \
+            sudo docker-compose pull && \
+            sudo docker-compose up -d --build \
           "
