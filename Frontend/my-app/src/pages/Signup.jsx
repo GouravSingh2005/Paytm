@@ -17,6 +17,9 @@ export const Signup = () => {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
+  // ✅ Use env variable
+  const SERVER_URL =  import.meta.env.VITE_SERVER_URL;
+
   useEffect(() => {
     const userToken = localStorage.getItem("token");
     if (userToken) {
@@ -29,16 +32,13 @@ export const Signup = () => {
     setError("");
 
     try {
-      const response = await axios.post(
-        "http://localhost:3000/api/v1/user/signup",
-        {
-          username,
-          firstName,
-          lastName,
-          email,
-          password,
-        }
-      );
+      const response = await axios.post(`${SERVER_URL}/api/v1/user/signup`, {
+        username,
+        firstName,
+        lastName,
+        email,
+        password,
+      });
 
       localStorage.setItem("token", response.data.token);
       navigate("/dashboard");
