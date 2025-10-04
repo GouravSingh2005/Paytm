@@ -69,12 +69,12 @@ jobs:
             scp -o StrictHostKeyChecking=no ./Backend/.env ubuntu@${{ secrets.EC2_PUBLIC_IP }}:~/paytm/.env
           fi
 
-      - name: SSH into EC2 and deploy
+            - name: SSH into EC2 and deploy
         run: |
           ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_PUBLIC_IP }} << 'EOF'
             set -e
 
-            # Install Docker if not present
+            # Docker setup
             sudo apt-get update
             sudo apt-get install -y docker.io docker-compose-plugin
             sudo systemctl start docker
@@ -83,7 +83,7 @@ jobs:
 
             mkdir -p ~/paytm
 
-            # Create docker-compose.yml
+            # Write docker-compose.yml
             cat <<EOC > ~/paytm/docker-compose.yml
 version: "3.8"
 services:
@@ -104,7 +104,6 @@ services:
     container_name: paytm-frontend
 EOC
 
-            # Docker login and deployment
             echo "${{ secrets.DOCKER_HUB_PASSWORD }}" | sudo docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
 
             cd ~/paytm
