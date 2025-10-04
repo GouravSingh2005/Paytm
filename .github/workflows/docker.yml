@@ -69,26 +69,23 @@ jobs:
             scp -o StrictHostKeyChecking=no ./Backend/.env ubuntu@${{ secrets.EC2_PUBLIC_IP }}:~/paytm/.env
           fi
 
-            - name: SSH into EC2 and deploy
+      - name: SSH into EC2 and deploy
         run: |
           ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_PUBLIC_IP }} << 'EOF'
             set -e
-
             # Docker setup
             sudo apt-get update
             sudo apt-get install -y docker.io docker-compose-plugin
             sudo systemctl start docker
             sudo systemctl enable docker
             sudo usermod -aG docker ubuntu || true
-
             mkdir -p ~/paytm
-
             # Write docker-compose.yml
-            cat <<EOC > ~/paytm/docker-compose.yml
+            cat << 'EOC' > ~/paytm/docker-compose.yml
 version: "3.8"
 services:
   backend:
-    image: ${{ secrets.DOCKER_HUB_USERNAME }}/paytm-backend:latest
+    image: $DOCKER_USERNAME/paytm-backend:latest
     ports:
       - "3001:3001"
     env_file:
@@ -96,7 +93,7 @@ services:
     container_name: paytm-backend
 
   frontend:
-    image: ${{ secrets.DOCKER_HUB_USERNAME }}/paytm-frontend:latest
+    image: $DOCKER_USERNAME/paytm-frontend:latest
     ports:
       - "8081:3000"
     depends_on:
@@ -104,11 +101,14 @@ services:
     container_name: paytm-frontend
 EOC
 
-            echo "${{ secrets.DOCKER_HUB_PASSWORD }}" | sudo docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
+            echo "$DOCKER_PASSWORD" | sudo docker login -u "$DOCKER_USERNAME" --password-stdin
 
             cd ~/paytm
-            sudo docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/paytm-backend:latest
-            sudo docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/paytm-frontend:latest
+            sudo docker pull $DOCKER_USERNAME/paytm-backend:latest
+            sudo docker pull $DOCKER_USERNAME/paytm-frontend:latest
             sudo docker compose down || true
             sudo docker compose up -d
 EOF
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_HUB_PASSWORD }}
