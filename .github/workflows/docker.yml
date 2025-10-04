@@ -7,7 +7,7 @@ on:
 jobs:
   backend:
     runs-on: ubuntu-latest
-    environment: docker  # ← ADD THIS LINE
+    environment: docker
     steps:
       - uses: actions/checkout@v3
 
@@ -28,7 +28,7 @@ jobs:
 
   frontend:
     runs-on: ubuntu-latest
-    environment: docker  # ← ADD THIS LINE
+    environment: docker
     steps:
       - uses: actions/checkout@v3
 
@@ -49,7 +49,7 @@ jobs:
 
   deploy:
     runs-on: ubuntu-latest
-    environment: docker  # ← ADD THIS LINE
+    environment: docker
     needs: [backend, frontend]
     steps:
       - uses: actions/checkout@v3
@@ -64,18 +64,18 @@ jobs:
       - name: Copy files to EC2
         run: |
           scp -o StrictHostKeyChecking=no docker-compose.yml ubuntu@${{ secrets.EC2_PUBLIC_IP }}:~/paytm/
+          # Create directory structure and copy .env if exists
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_PUBLIC_IP }} "mkdir -p ~/paytm/Backend"
           if [ -f Backend/.env ]; then
-            scp -o StrictHostKeyChecking=no Backend/.env ubuntu@${{ secrets.EC2_PUBLIC_IP }}:~/paytm/
+            scp -o StrictHostKeyChecking=no Backend/.env ubuntu@${{ secrets.EC2_PUBLIC_IP }}:~/paytm/Backend/
           fi
 
-      - name: SSH into EC2 and deploy
+      - name: Install Docker and Docker Compose
         run: |
-          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_PUBLIC_IP }} "
-            if ! command -v docker-compose &> /dev/null; then
-              sudo apt-get update
-              sudo apt-get install -y docker.io curl
-              sudo curl -L 'https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)' -o /usr/local/bin/docker-compose
-              sudo chmod +x /usr/local/bin/docker-compose
-            fi
-            cd ~/paytm && sudo docker-compose pull && sudo docker-compose up -d
-          "
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_PUBLIC_IP }} "sudo apt-get update && sudo apt-get install -y docker.io curl"
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_PUBLIC_IP }} "sudo curl -L 'https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)' -o /usr/local/bin/docker-compose"
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_PUBLIC_IP }} "sudo chmod +x /usr/local/bin/docker-compose"
+
+      - name: Deploy Application
+        run: |
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_PUBLIC_IP }} "cd ~/paytm && echo '${{ secrets.DOCKER_HUB_PASSWORD }}' | sudo docker login -u '${{ secrets.DOCKER_HUB_USERNAME }}' --password-stdin && sudo docker-compose pull && sudo docker-compose up -d"
