@@ -20,7 +20,7 @@ export const SendMoney = () => {
 
   const handleTransfer = async () => {
     try {
-      const SERVER_URL = import.meta.env.VITE_SERVER_URL || "http://localhost:3000";
+      const SERVER_URL = "http://paytm-backend:3001";
       const token = localStorage.getItem("token");
 
       if (!token) {

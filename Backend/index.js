@@ -1,20 +1,26 @@
 const express = require("express");
 const mainRouter = require("./routes/index");
 const cors = require("cors");
+require("dotenv").config();  // dotenv se .env load
 
 const app = express();
 
+const PORT = process.env.PORT || 3001;
+
+// Docker + Local CORS setup
+const FRONTEND_URLS = [
+  process.env.FRONTEND_URL_LOCAL || "http://localhost:5173",  // local dev
+  process.env.FRONTEND_URL_DOCKER || "http://frontend:8081" ,
+  process.env.FRONTEND_URL_DOCKER || "http://frontend:3000"   // frontend container
+];
+
 app.use(cors());
 
-
-app.use(cors({
-  origin: "http://localhost:5173",  // ✅ Frontend URL allow kar raha hai
-  methods: "GET,POST,PUT,DELETE",
-  credentials: true
-}));
-
+// JSON parsing
 app.use(express.json());
 
-app.use("/api/v1", mainRouter); 
+// Routes
+app.use("/api/v1", mainRouter);
 
-app.listen(3000, () => console.log("Server running on port 3000"));
+// Start server
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

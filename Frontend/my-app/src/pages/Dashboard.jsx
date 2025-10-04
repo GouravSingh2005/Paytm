@@ -5,14 +5,12 @@ import { Users } from "../components/Users";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
-
 export const Dashboard = () => {
   const [bal, setBal] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
     const userToken = localStorage.getItem("token");
-    
     if (!userToken) {
       navigate("/Signin");
       return;
@@ -20,10 +18,9 @@ export const Dashboard = () => {
 
     const fetchBalance = async () => {
       try {
-        const response = await axios.get("http://localhost:3000/api/v1/account/balance", {
-          headers: {
-            Authorization: `Bearer ${userToken}`,
-          },
+        const backendUrl = import.meta.env.VITE_BACKEND_URL;
+        const response = await axios.get(`http://paytm-backend:3001/api/v1/account/balance`, {
+          headers: { Authorization: `Bearer ${userToken}` },
         });
         setBal(response.data.balance);
       } catch (error) {

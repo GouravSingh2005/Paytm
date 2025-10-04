@@ -13,6 +13,9 @@ export const Signin = () => {
   const [error, setError] = useState(""); // State for handling errors
   const navigate = useNavigate();
 
+  // ✅ Use env variable
+  const SERVER_URL = "http://localhost:3001";
+
   useEffect(() => {
     const userToken = localStorage.getItem("token");
     if (userToken) {
@@ -23,19 +26,17 @@ export const Signin = () => {
   const handleSignin = async () => {
     setError(""); // Clear previous errors
 
-    // **Validate Empty Fields**
     if (!email.trim() || !password.trim()) {
       setError("Email and password are required!");
       return;
     }
 
     try {
-      const response = await axios.post("http://localhost:3000/api/v1/user/signin", {
+      const response = await axios.post(`${SERVER_URL}/api/v1/user/signin`, {
         email,
         password,
       });
 
-      // Save token & navigate to dashboard
       localStorage.setItem("token", response.data.token);
       navigate("/dashboard");
     } catch (error) {
@@ -49,7 +50,7 @@ export const Signin = () => {
         <Heading label="Sign in" />
         <SubHeading label="Enter your credentials to access your account" />
 
-        {error && <p className="text-red-500 text-sm mt-2">{error}</p>} {/* Show error message */}
+        {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
 
         <InputBox
           onChange={(e) => setEmail(e.target.value)}
