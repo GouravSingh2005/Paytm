@@ -7,6 +7,7 @@ on:
 jobs:
   backend:
     runs-on: ubuntu-latest
+    environment: docker  # ← ADD THIS LINE
     steps:
       - uses: actions/checkout@v3
 
@@ -27,6 +28,7 @@ jobs:
 
   frontend:
     runs-on: ubuntu-latest
+    environment: docker  # ← ADD THIS LINE
     steps:
       - uses: actions/checkout@v3
 
@@ -47,6 +49,7 @@ jobs:
 
   deploy:
     runs-on: ubuntu-latest
+    environment: docker  # ← ADD THIS LINE
     needs: [backend, frontend]
     steps:
       - uses: actions/checkout@v3
@@ -77,4 +80,4 @@ jobs:
             echo '${{ secrets.DOCKER_HUB_PASSWORD }}' | sudo docker login -u '${{ secrets.DOCKER_HUB_USERNAME }}' --password-stdin && \
             sudo docker-compose pull && \
             sudo docker-compose up -d --build \
-          "
+          
