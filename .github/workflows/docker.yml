@@ -25,6 +25,8 @@ jobs:
           context: ./Backend
           push: true
           tags: ${{ secrets.DOCKER_HUB_USERNAME }}/paytm-backend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   frontend:
     runs-on: ubuntu-latest
@@ -46,6 +48,8 @@ jobs:
           context: ./Frontend/my-app
           push: true
           tags: ${{ secrets.DOCKER_HUB_USERNAME }}/paytm-frontend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   deploy:
     runs-on: ubuntu-latest
@@ -61,21 +65,29 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.EC2_PUBLIC_IP }} >> ~/.ssh/known_hosts
 
-      - name: Copy files to EC2
+      - name: Copy entire project to EC2
         run: |
-          scp -o StrictHostKeyChecking=no docker-compose.yml ubuntu@${{ secrets.EC2_PUBLIC_IP }}:~/paytm/
-          # Create directory structure and copy .env if exists
-          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_PUBLIC_IP }} "mkdir -p ~/paytm/Backend"
-          if [ -f Backend/.env ]; then
-            scp -o StrictHostKeyChecking=no Backend/.env ubuntu@${{ secrets.EC2_PUBLIC_IP }}:~/paytm/Backend/
-          fi
+          # Copy complete project structure
+          rsync -avz -e "ssh -o StrictHostKeyChecking=no" \
+            --exclude '.git' \
+            --exclude 'node_modules' \
+            ./ ubuntu@${{ secrets.EC2_PUBLIC_IP }}:~/paytm/
 
-      - name: Install Docker and Docker Compose
+      - name: Install Docker and Docker Compose on EC2
         run: |
           ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_PUBLIC_IP }} "sudo apt-get update && sudo apt-get install -y docker.io curl"
           ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_PUBLIC_IP }} "sudo curl -L 'https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)' -o /usr/local/bin/docker-compose"
           ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_PUBLIC_IP }} "sudo chmod +x /usr/local/bin/docker-compose"
 
+      - name: Verify Docker Setup
+        run: |
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_PUBLIC_IP }} "docker --version && docker-compose --version"
+
       - name: Deploy Application
         run: |
-          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_PUBLIC_IP }} "cd ~/paytm && echo '${{ secrets.DOCKER_HUB_PASSWORD }}' | sudo docker login -u '${{ secrets.DOCKER_HUB_USERNAME }}' --password-stdin && sudo docker-compose pull && sudo docker-compose up -d"
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_PUBLIC_IP }} "cd ~/paytm && sudo docker-compose up -d --build"
+
+      - name: Verify Deployment
+        run: |
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_PUBLIC_IP }} "cd ~/paytm && sudo docker-compose ps"
+          echo "Deployment completed successfully!
